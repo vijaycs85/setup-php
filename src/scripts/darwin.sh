@@ -2,7 +2,7 @@
 self_hosted_helper() {
   if ! command -v brew >/dev/null; then
     step_log "Setup Brew"
-    get -q -e "/tmp/install.sh" "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" && /tmp/install.sh >/dev/null 2>&1
+    get -q -e "/tmp/install.sh" "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" && /tmp/install.sh 
     add_log "${tick:?}" "Brew" "Installed Homebrew"
   fi
 }
@@ -12,7 +12,7 @@ remove_extension() {
   extension=$1
   if check_extension "$extension"; then
     sudo sed -Ei '' "/=(.*\/)?\"?$extension/d" "${ini_file:?}"
-    sudo rm -rf "${scan_dir:?}"/*"$extension"* "${ext_dir:?}"/"$extension".so >/dev/null 2>&1
+    sudo rm -rf "${scan_dir:?}"/*"$extension"* "${ext_dir:?}"/"$extension".so 
     (! check_extension "$extension" && add_log "${tick:?}" ":$extension" "Removed") ||
       add_log "${cross:?}" ":$extension" "Could not remove $extension on PHP ${semver:?}"
   else
@@ -33,7 +33,7 @@ add_pecl_extension() {
   if [ "$ext_version" = "$pecl_version" ]; then
     add_log "${tick:?}" "$extension" "Enabled"
   else
-    remove_extension "$extension" >/dev/null 2>&1
+    remove_extension "$extension" 
     pecl_install "$extension-$pecl_version"
     add_extension_log "$extension-$pecl_version" "Installed and enabled"
   fi
@@ -45,11 +45,11 @@ add_brew_tap() {
   if ! [ -d "$tap_dir/$tap" ]; then
     tap_user=$(dirname "$tap")
     tap_name=$(basename "$tap")
-    get -s -n "" "https://github.com/$tap/archive/master.tar.gz" | tar -xzf - -C "$tap_dir/$tap_user" >/dev/null 2>&1
+    get -s -n "" "https://github.com/$tap/archive/master.tar.gz" | tar -xzf - -C "$tap_dir/$tap_user" 
     if [ -d "$tap_dir/$tap_user/$tap_name-master" ]; then
       sudo mv "$tap_dir/$tap_user/$tap_name-master" "$tap_dir/$tap_user/$tap_name"
     else
-      brew tap --shallow "$tap" >/dev/null 2>&1
+      brew tap --shallow "$tap" 
     fi
   fi
 }
@@ -64,7 +64,7 @@ add_brew_extension() {
   else
     add_brew_tap shivammathur/homebrew-extensions
     sudo mv "$tap_dir"/shivammathur/homebrew-extensions/.github/deps/"$extension"/* "$tap_dir/homebrew/homebrew-core/Formula/" 2>/dev/null || true
-    brew install "$extension@$version" >/dev/null 2>&1
+    brew install "$extension@$version" 
     sudo cp "$brew_prefix/opt/$extension@$version/$extension.so" "$ext_dir"
     add_extension_log "$extension" "Installed and enabled"
   fi
@@ -78,8 +78,8 @@ add_extension() {
   if check_extension "$extension"; then
     add_log "${tick:?}" "$extension" "Enabled"
   else
-    [[ "$version" =~ 5.[4-5] ]] && [ "$extension" = "imagick" ] && brew install pkg-config imagemagick >/dev/null 2>&1
-    pecl_install "$extension" >/dev/null 2>&1 &&
+    [[ "$version" =~ 5.[4-5] ]] && [ "$extension" = "imagick" ] && brew install pkg-config imagemagick 
+    pecl_install "$extension"  &&
       if [[ "$version" =~ ${old_versions:?} ]]; then echo "$prefix=$ext_dir/$extension.so" >>"$ini_file"; fi
     add_extension_log "$extension" "Installed and enabled"
   fi
@@ -126,13 +126,13 @@ setup_php() {
   step_log "Setup PHP"
   existing_version=$(php-config --version 2>/dev/null | cut -c 1-3)
   if [[ "$version" =~ ${old_versions:?} ]]; then
-    run_script "php5-darwin" "${version/./}" >/dev/null 2>&1
+    run_script "php5-darwin" "${version/./}" 
     status="Installed"
   elif [ "$existing_version" != "$version" ]; then
-    add_php "install" >/dev/null 2>&1
+    add_php "install" 
     status="Installed"
   elif [ "$existing_version" = "$version" ] && [ "${update:?}" = "true" ]; then
-    add_php "upgrade" >/dev/null 2>&1
+    add_php "upgrade" 
     status="Updated to"
   else
     status="Found"

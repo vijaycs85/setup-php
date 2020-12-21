@@ -32,17 +32,17 @@ add_ppa() {
 # Function to update the package lists.
 update_lists() {
   if [ ! -e /tmp/setup_php ]; then
-    [ "$DISTRIB_RELEASE" = "20.04" ] && add_ppa >/dev/null 2>&1
+    [ "$DISTRIB_RELEASE" = "20.04" ] && add_ppa 
     cleanup_lists
-    sudo "$debconf_fix" apt-get update >/dev/null 2>&1
-    echo '' | sudo tee /tmp/setup_php >/dev/null 2>&1
+    sudo "$debconf_fix" apt-get update 
+    echo '' | sudo tee /tmp/setup_php 
   fi
 }
 
 # Function to install a package
 install_packages() {
   packages=("$@")
-  $apt_install "${packages[@]}" >/dev/null 2>&1 || update_lists && $apt_install "${packages[@]}" >/dev/null 2>&1
+  $apt_install "${packages[@]}"  || update_lists && $apt_install "${packages[@]}" 
 }
 
 # Function to delete extensions.
@@ -50,9 +50,9 @@ delete_extension() {
   extension=$1
   sudo sed -Ei "/=(.*\/)?\"?$extension/d" "${ini_file[@]}"
   sudo sed -Ei "/=(.*\/)?\"?$extension/d" "$pecl_file"
-  sudo rm -rf "$scan_dir"/*"$extension"* "$ext_dir"/"$extension".so >/dev/null 2>&1
+  sudo rm -rf "$scan_dir"/*"$extension"* "$ext_dir"/"$extension".so 
   if [ "${runner:?}" = "self-hosted" ]; then
-    $apt_remove "php-$extension" "php$version-$extension" >/dev/null 2>&1 || true
+    $apt_remove "php-$extension" "php$version-$extension"  || true
   fi
 }
 
@@ -61,8 +61,8 @@ remove_extension() {
   extension=$1
   if check_extension "$extension"; then
     if [[ ! "$version" =~ ${old_versions:?} ]] && [ -e /etc/php/"$version"/mods-available/"$extension".ini ]; then
-      sudo phpdismod -v "$version" "$extension" >/dev/null 2>&1
-      echo "$extension" | sudo tee -a /tmp/setup_php_dismod >/dev/null 2>&1
+      sudo phpdismod -v "$version" "$extension" 
+      echo "$extension" | sudo tee -a /tmp/setup_php_dismod 
     fi
     delete_extension "$extension"
     (! check_extension "$extension" && add_log "${tick:?}" ":$extension" "Removed") ||
@@ -81,8 +81,8 @@ add_pdo_extension() {
   else
     ext=$1
     ext_name=$1
-    sudo rm -rf "$scan_dir"/*pdo.ini >/dev/null 2>&1
-    if ! check_extension "pdo" 2>/dev/null; then echo "extension=pdo.so" | sudo tee -a "${ini_file[@]}" >/dev/null 2>&1; fi
+    sudo rm -rf "$scan_dir"/*pdo.ini 
+    if ! check_extension "pdo" 2>/dev/null; then echo "extension=pdo.so" | sudo tee -a "${ini_file[@]}" ; fi
     if [ "$ext" = "mysql" ]; then
       enable_extension "mysqlnd" "extension"
       ext_name="mysqli"
@@ -90,8 +90,8 @@ add_pdo_extension() {
       ext="sqlite3"
       ext_name="sqlite3"
     fi
-    add_extension "$ext_name" "extension" >/dev/null 2>&1
-    add_extension "$pdo_ext" "extension" >/dev/null 2>&1
+    add_extension "$ext_name" "extension" 
+    add_extension "$pdo_ext" "extension" 
     add_extension_log "$pdo_ext" "Enabled"
   fi
 }
@@ -150,7 +150,7 @@ add_extension_from_source() {
     cd /tmp/"$extension-$release" || exit 1
     phpize && ./configure "$args" && make -j"$(nproc)" && sudo make install
     enable_extension "$extension" "$prefix"
-  ) >/dev/null 2>&1
+  ) 
   add_extension_log "$extension-$release" "Installed and enabled"
 }
 
@@ -160,9 +160,9 @@ add_devtools() {
   if ! command -v "$tool$version" >/dev/null; then
     install_packages "php$version-dev" "php$version-xml"
   fi
-  sudo update-alternatives --set php-config /usr/bin/php-config"$version" >/dev/null 2>&1
-  sudo update-alternatives --set phpize /usr/bin/phpize"$version" >/dev/null 2>&1
-  configure_pecl >/dev/null 2>&1
+  sudo update-alternatives --set php-config /usr/bin/php-config"$version" 
+  sudo update-alternatives --set phpize /usr/bin/phpize"$version" 
+  configure_pecl 
   add_log "${tick:?}" "$tool" "Added $tool $semver"
 }
 
@@ -179,11 +179,11 @@ setup_old_versions() {
 
 # Function to add PECL.
 add_pecl() {
-  add_devtools phpize >/dev/null 2>&1
+  add_devtools phpize 
   if ! command -v pecl >/dev/null; then
     install_packages php-pear
   fi
-  configure_pecl >/dev/null 2>&1
+  configure_pecl 
   pecl_version=$(get_tool_version "pecl" "version")
   add_log "${tick:?}" "PECL" "Added PECL $pecl_version"
 }
@@ -236,7 +236,7 @@ add_php() {
 
 # Function to ini file for pear and link it to each SAPI.
 link_pecl_file() {
-  echo '' | sudo tee "$pecl_file" >/dev/null 2>&1
+  echo '' | sudo tee "$pecl_file" 
   for file in "${ini_file[@]}"; do
     sapi_scan_dir="$(realpath -m "$(dirname "$file")")/conf.d"
     [ "$sapi_scan_dir" != "$scan_dir" ] && ! [ -h "$sapi_scan_dir" ] && sudo ln -sf "$pecl_file" "$sapi_scan_dir/99-pecl.ini"
@@ -249,20 +249,20 @@ setup_php() {
   sudo mkdir -m 777 -p /var/run /run/php
   if [ "$(php-config --version 2>/dev/null | cut -c 1-3)" != "$version" ]; then
     if [ ! -e "/usr/bin/php$version" ]; then
-      add_php >/dev/null 2>&1
+      add_php 
     else
       if [ "${update:?}" = "true" ]; then
-        update_php >/dev/null 2>&1
+        update_php 
       else
         status="Switched to"
       fi
     fi
     if ! [[ "$version" =~ ${old_versions:?}|${nightly_versions:?} ]]; then
-      switch_version >/dev/null 2>&1
+      switch_version 
     fi
   else
     if [ "$update" = "true" ]; then
-      update_php >/dev/null 2>&1
+      update_php 
     else
       status="Found"
     fi
@@ -279,7 +279,7 @@ setup_php() {
   mapfile -t ini_file < <(sudo find "$ini_dir/.." -name "php.ini" -exec readlink -m {} +)
   link_pecl_file
   configure_php
-  sudo rm -rf /usr/local/bin/phpunit >/dev/null 2>&1
+  sudo rm -rf /usr/local/bin/phpunit 
   sudo chmod 777 "${ini_file[@]}" "$pecl_file" "${tool_path_dir:?}"
   sudo cp "$dist"/../src/configs/*.json "$RUNNER_TOOL_CACHE/"
   add_log "${tick:?}" "PHP" "$status PHP $semver"
