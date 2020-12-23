@@ -45,6 +45,7 @@ add_brew_tap() {
   if ! [ -d "$tap_dir/$tap" ]; then
     tap_user=$(dirname "$tap")
     tap_name=$(basename "$tap")
+    sudo mkdir -p "$tap_dir/$tap_user"
     get -s -n "" "https://github.com/$tap/archive/master.tar.gz" | tar -xzf - -C "$tap_dir/$tap_user" >/dev/null 2>&1
     if [ -d "$tap_dir/$tap_user/$tap_name-master" ]; then
       sudo mv "$tap_dir/$tap_user/$tap_name-master" "$tap_dir/$tap_user/$tap_name"
@@ -144,7 +145,7 @@ setup_php() {
   scan_dir=$(php --ini | grep additional | sed -e "s|.*: s*||")
   sudo mkdir -m 777 -p "$ext_dir" "$HOME/.composer"
   semver=$(php -v | head -n 1 | cut -f 2 -d ' ')
-  if [ ${semver%.*} != "$version" ]; then
+  if [ "${semver%.*}" != "$version" ]; then
     add_log "$cross" "PHP" "Could not setup PHP $version"
     exit 1
   fi
